@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Nao deve logar quando o codigo de autenticacao e invalido', async ({ page }) => {
+test('Não deve logar quando o código de autenticação é inválido', async ({ page }) => {
 
   const user = {
     cpf: '00000014141',
