@@ -3,8 +3,9 @@ import { test, expect } from '@playwright/test';
 import { obterCodigo2FA } from '../support/db';
 
 import { LoginPage } from '../pages/LoginPage';
+import { DashPage } from '../pages/DashPage';
 
-import ( DashPage ) from '../pages/DashPage';
+import { cleanJobs, getJob } from '../support/redis';
 
 test('Não deve logar quando o código de autenticação é inválido', async ({ page }) => {
 
@@ -35,18 +36,25 @@ test('Deve acessar a conta do usuário', async ({ page }) => {
     senha: '147258'
   }
 
+  await cleanJobs()
+
   await loginPage.acessaPagina()
   await loginPage.informaCpf(user.cpf)
   await loginPage.informaSenha(user.senha)
 
-  //temporário
-  await page.waitForTimeout(3000);
+  //checkpoint
+  //tem até 3seg para ir para a próxima etapa. 
+  // Ganho de performance com relação ao "await page.waitForTimeout(3000)", pois ele não espera necessariamente 3s, mas segue assim que encontrar a página correta.
+  //e ainda garante que está indo para o lugar correto
+  await page.getByRole('heading', {name: 'Verificação em duas etapas'})
+    .waitFor({timeout: 3000})
 
-  const code = await obterCodigo2FA()
-  await loginPage.informa2FA(code)
+  //este código traz o código de 2 fatores lá do Redis
+  //const codigo = await getJob()
+  //este código traz o código de 2 fatores lá do banco de dados
+  const codigo = await obterCodigo2FA(user.cpf)
+  await loginPage.informa2FA(codigo)
   
-  //temporário
-  await page.waitForTimeout(2000)
-  
-  expect(await dashPage.obterSaldo()).toHaveText('R$ 5.000,00')
+  //aqui não precisa de timeout porque colocando await antes do expect, ele vai esperar a troca de página (que nesse caso realmente troca a URL)
+  await expect(await dashPage.obterSaldo()).toHaveText('R$ 5.000,00')
 });
