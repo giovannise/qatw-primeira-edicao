@@ -15,6 +15,7 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 sh 'npx playwright test' //exatamente o que já executamos no bash para executar a automação dos testes
+                allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
             }
         }
     }
